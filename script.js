@@ -98,15 +98,16 @@ function checkout() {
     html2canvas(receiptDiv, { scale: 2 }).then(canvas => {
         const imgData = canvas.toDataURL("image/png");
 
-        // ✅ FORCE DOWNLOAD (Android works well here)
-        const link = document.createElement("a");
-        link.href = imgData;
-        link.download = "SJM_Receipt.png";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
         receiptDiv.style.display = "none";
+
+        // ✅ OPEN IMAGE (ANDROID SAFE)
+        const newTab = window.open();
+        newTab.document.write(`
+            <h2>Receipt</h2>
+            <p><b>Android:</b> Long press the image → Download Image</p>
+            <p><b>iPhone:</b> Long press → Save Image</p>
+            <img src="${imgData}" style="width:100%;" />
+        `);
 
         // ✅ Copy order text
         let message = "Hello! I want to order:\n\n";
@@ -116,14 +117,12 @@ function checkout() {
         message += `\nTotal: ₱${total.toFixed(2)}`;
 
         navigator.clipboard.writeText(message).then(() => {
-            alert("Receipt downloaded!\nOpening Messenger...");
+            alert("Receipt ready!\nSave the image, then Messenger will open.");
 
-            // ✅ OPEN Messenger LAST (VERY IMPORTANT)
+            // ✅ Open Messenger AFTER
             setTimeout(() => {
                 window.open("https://m.me/stephenjay.balansag.3", "_blank");
-            }, 500); // small delay helps Android
-
-            alert("Check your Downloads folder for the receipt image.");
+            }, 1000);
         });
 
     }).catch(err => {
