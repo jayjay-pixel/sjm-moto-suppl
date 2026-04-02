@@ -13,14 +13,12 @@ header {
   text-align: center;
 }
 
-header h1 { margin: 0; }
-header p { margin: 5px 0 0 0; }
+header h1 {
+  margin: 0;
+}
 
-/* Banner */
-.banner img {
-  width: 100%;
-  border-radius: 10px;
-  margin: 15px 0;
+header p {
+  margin: 5px 0 0 0;
 }
 
 /* Products Grid */
@@ -51,8 +49,16 @@ header p { margin: 5px 0 0 0; }
   border-radius: 5px;
 }
 
-.product h3 { font-size: 16px; margin: 10px 0 5px 0; }
-.product p { color: #ff5722; font-weight: bold; margin: 5px 0; }
+.product h3 {
+  font-size: 16px;
+  margin: 10px 0 5px 0;
+}
+
+.product p {
+  color: #ff5722;
+  font-weight: bold;
+  margin: 5px 0;
+}
 
 button {
   background-color: #ff5722;
@@ -65,7 +71,9 @@ button {
   width: 100%;
 }
 
-button:hover { background-color: #e64a19; }
+button:hover {
+  background-color: #e64a19;
+}
 
 /* Cart Section */
 #cart-section {
@@ -76,32 +84,77 @@ button:hover { background-color: #e64a19; }
   box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 
-#cart-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+#cart-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 10px;
+}
+
 #cart-table th, #cart-table td {
   padding: 8px;
   border-bottom: 1px solid #ccc;
   text-align: center;
 }
 
-#cart-table th { background-color: #ff5722; color: white; }
+#cart-table th {
+  background-color: #ff5722;
+  color: white;
+}
 
 /* Quantity buttons inside cart */
-#cart-table td button { width: 25px; padding: 5px; margin: 0 3px; }
+#cart-table td button {
+  width: 25px;
+  padding: 5px;
+  margin: 0 3px;
+}
 
 /* Responsive */
 @media screen and (max-width: 600px) {
-  /* Stack products in 1 column */
-  .products { grid-template-columns: 1fr; padding: 10px; }
-  .product img { height: auto; }
+  .products {
+    grid-template-columns: 1fr;
+    padding: 10px;
+  }
 
-  /* Mobile cart adjustments */
-  #cart-section { margin: 10px; padding: 10px; font-size: 14px; }
-  #cart-table { display: block; width: 100%; }
-  #cart-table thead, tbody, tr, td, th { display: block; }
-  #cart-table tr { margin-bottom: 10px; border-bottom: 1px solid #ccc; }
-  #cart-table td { text-align: left; padding: 5px 0; }
-  #cart-table td button { width: 30px; padding: 3px; margin: 0 2px; }
-  #cart-table th { display: none; }
-  #cart-section h3 { font-size: 16px; }
+  .product img {
+    height: auto;
+  }
+
+  #cart-section {
+    margin: 10px;
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  #cart-table {
+    display: block;
+    width: 100%;
+  }
+
+  #cart-table thead, tbody, tr, td, th {
+    display: block;
+  }
+
+  #cart-table tr {
+    margin-bottom: 10px;
+    border-bottom: 1px solid #ccc;
+  }
+
+  #cart-table td {
+    text-align: left;
+    padding: 5px 0;
+  }
+
+  #cart-table td button {
+    width: 30px;
+    padding: 3px;
+    margin: 0 2px;
+  }
+
+  #cart-table th {
+    display: none;
+  }
+
+  #cart-section h3 {
+    font-size: 16px;
+  }
 }
-
