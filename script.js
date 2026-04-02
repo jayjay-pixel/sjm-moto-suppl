@@ -131,3 +131,8 @@ function checkout() {
         receiptDiv.style.display = "none";
     });
 }
+
+function openInBrowser() {
+    // Reloads the current page, which prompts the system to open in default browser
+    window.location.href = window.location.href;
+}
