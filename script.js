@@ -67,17 +67,13 @@ function checkout() {
         return;
     }
 
-    // ✅ Open Messenger FIRST (fix for iOS popup blocking)
-    window.open("https://m.me/stephenjay.balansag.3", "_blank");
-
-    // ✅ Check if html2canvas is loaded
     if (typeof html2canvas === "undefined") {
-        alert("Receipt generator not loaded. Please refresh the page.");
+        alert("Receipt generator not loaded.");
         return;
     }
 
-    // ✅ Fill receipt data
-    const tbody = document.querySelector("#cart-receipt tbody");
+    const receiptDiv = document.getElementById("cart-receipt");
+    const tbody = receiptDiv.querySelector("tbody");
     tbody.innerHTML = "";
 
     let total = 0;
@@ -97,14 +93,12 @@ function checkout() {
 
     document.getElementById("receipt-total").textContent = total.toFixed(2);
 
-    // ✅ Generate receipt image
-    const receiptDiv = document.getElementById("cart-receipt");
     receiptDiv.style.display = "block";
 
     html2canvas(receiptDiv, { scale: 2 }).then(canvas => {
         const imgData = canvas.toDataURL("image/png");
 
-        // ✅ Auto download (Android / PC)
+        // ✅ FORCE DOWNLOAD (Android works well here)
         const link = document.createElement("a");
         link.href = imgData;
         link.download = "SJM_Receipt.png";
@@ -112,32 +106,29 @@ function checkout() {
         link.click();
         document.body.removeChild(link);
 
-        // ✅ Show image (for iOS fallback)
-        const newTab = window.open();
-        newTab.document.write(`
-            <h2>Receipt</h2>
-            <p>iPhone: Long press the image then tap "Save Image"</p>
-            <img src="${imgData}" style="width:100%;" />
-        `);
-
         receiptDiv.style.display = "none";
 
         // ✅ Copy order text
         let message = "Hello! I want to order:\n\n";
-
         cart.forEach(item => {
             message += `${item.name} x${item.qty} = ₱${(item.price * item.qty).toFixed(2)}\n`;
         });
-
         message += `\nTotal: ₱${total.toFixed(2)}`;
 
         navigator.clipboard.writeText(message).then(() => {
-            alert("Messenger opened!\nPaste your order and send.\nAttach the receipt image if needed.");
+            alert("Receipt downloaded!\nOpening Messenger...");
+
+            // ✅ OPEN Messenger LAST (VERY IMPORTANT)
+            setTimeout(() => {
+                window.open("https://m.me/stephenjay.balansag.3", "_blank");
+            }, 500); // small delay helps Android
+
+            alert("Check your Downloads folder for the receipt image.");
         });
 
     }).catch(err => {
         console.error(err);
-        alert("Error generating receipt. Please try again.");
+        alert("Error generating receipt.");
         receiptDiv.style.display = "none";
     });
 }
