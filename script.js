@@ -61,20 +61,38 @@ function changeQty(index, delta) {
   displayCart();
 }
 
-// Checkout via Messenger
+// Checkout via Messenger (works on Android & iOS)
 function checkout() {
   if (cart.length === 0) {
     alert("Your cart is empty!");
     return;
   }
+
+  // Prepare the order message
   let message = "Hello! I want to order:\n\n";
   cart.forEach(item => {
     message += `${item.name} x${item.qty} = ₱${(item.price * item.qty).toFixed(2)}\n`;
   });
   let total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
   message += `\nTotal: ₱${total.toFixed(2)}`;
+
+  // Copy message to clipboard
   navigator.clipboard.writeText(message).then(() => {
     alert("Order copied to clipboard! Open Messenger and paste it to send.");
-    window.open("https://m.me/stephenjay.balansag.3", "_blank"); // replace with your Messenger username
+
+    const username = "stephenjay.balansag.3"; // Replace with your Messenger username
+    const messengerAppURL = `fb-messenger://user-thread/${username}`;
+    const messengerWebURL = `https://m.me/${username}`;
+
+    // Try opening Messenger app first
+    const now = Date.now();
+    window.location.href = messengerAppURL;
+
+    // Fallback to web after 700ms (if app didn't open)
+    setTimeout(() => {
+      if (Date.now() - now < 1000) {
+        window.open(messengerWebURL, "_blank");
+      }
+    }, 700);
   });
 }
