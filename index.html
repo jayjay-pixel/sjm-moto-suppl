@@ -3,8 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#d32f2f">
   <title>SJM Moto Supply | Authorized Shell Distributor</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="Logo.png">
+  <link rel="apple-touch-icon" href="Logo.png">
 </head>
 <body>
   <header class="main-header">
@@ -24,7 +28,7 @@
       
       <div class="customer-info">
         <label for="customer-name">Customer's Name:</label>
-        <input type="text" id="customer-name" placeholder="Please enter your name" required>
+        <input type="text" id="customer-name" placeholder="Full Name" required>
       </div>
 
       <div class="cart-summary">
@@ -35,6 +39,15 @@
   </main>
 
   <div id="toast-container"></div>
+  <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log('SJM App Registered'))
+        .catch(err => console.log('PWA Error', err));
+    });
+  }
+</script>
   <script src="script.js"></script>
 </body>
 </html>
