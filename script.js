@@ -130,12 +130,20 @@ function checkout() {
       `✅ Order copied!\n\n📌 Next Steps:\n1. Open Messenger\n2. Paste your order\n3. Send it\n\nThank you!`
     );
 
-    // Messenger web link
     const username = "stephenjay.balansag.3";
-    const messengerWebURL = `https://m.me/${username}`;
 
-    // Open in new tab (OS/browser will handle app redirect)
-    window.open(messengerWebURL, "_blank");
+    // Try opening Messenger app on iOS/Android
+    const messengerAppLink = `fb-messenger://user-thread/${username}`;
+    const messengerWebLink = `https://m.me/${username}`;
+
+    // Attempt app first, fallback to web
+    const newWindow = window.open(messengerAppLink, "_blank");
+    setTimeout(() => {
+      // If app didn’t open (iOS Safari), fallback to web
+      if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+        window.open(messengerWebLink, "_blank");
+      }
+    }, 500);
 
   }).catch(err => {
     alert("❌ Failed to copy order. Please copy manually.");
