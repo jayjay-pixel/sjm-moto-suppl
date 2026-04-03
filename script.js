@@ -68,27 +68,36 @@ function checkout() {
     return;
   }
 
-  // Prepare the order message
   let message = "Hello! I want to order:\n\n";
   cart.forEach(item => {
     message += `${item.name} x${item.qty} = ₱${(item.price * item.qty).toFixed(2)}\n`;
   });
+
   let total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
   message += `\nTotal: ₱${total.toFixed(2)}`;
 
-  // Copy message to clipboard
   navigator.clipboard.writeText(message).then(() => {
-    alert("Order copied to clipboard! Open Messenger and paste it to send.");
 
-    const username = "stephenjay.balansag.3"; // Replace with your Messenger username
+    // 👇 Improved instructions
+    alert(
+`✅ Order copied!
+
+📌 Next Steps:
+1. Messenger will open
+2. Tap the message box
+3. HOLD then press PASTE
+4. Send your order
+
+Thank you!`
+    );
+
+    const username = "stephenjay.balansag.3";
     const messengerAppURL = `fb-messenger://user-thread/${username}`;
     const messengerWebURL = `https://m.me/${username}`;
 
-    // Try opening Messenger app first
     const now = Date.now();
     window.location.href = messengerAppURL;
 
-    // Fallback to web after 700ms (if app didn't open)
     setTimeout(() => {
       if (Date.now() - now < 1000) {
         window.open(messengerWebURL, "_blank");
