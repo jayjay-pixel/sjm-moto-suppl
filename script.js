@@ -103,48 +103,46 @@ async function checkout() {
 
   const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
   
-  // Prepare data for Google Sheets
   const orderData = {
     customer: name,
     items: cart,
     total: total.toFixed(2)
   };
 
-  UI.checkoutBtn.innerText = "Processing...";
+  // 1. Prepare Messenger Message
+  let message = `📦 *New Order for SJM Moto*\nCustomer: ${name}\n\n`;
+  cart.forEach(item => {
+    message += `• ${item.name} (x${item.qty}) - ₱${(item.price * item.qty).toFixed(2)}\n`;
+  });
+  message += `\n*Total: ₱${total.toFixed(2)}*`;
+
+  UI.checkoutBtn.innerText = "Redirecting...";
   UI.checkoutBtn.disabled = true;
 
+  // 2. IMMEDIATE CLIPBOARD COPY
   try {
-    // 1. Send to Google Sheets (Replace with your actual URL)
-    await fetch('https://script.google.com/macros/s/AKfycbwLhKj_ApouehvAVNQL9CvhrxjrHPIj8_eyOQEC84b8U01px4mh2oyDUC5TEsTQtbmO/exec', {
-      method: 'POST',
-      mode: 'no-cors', 
-      body: JSON.stringify(orderData)
-    });
-
-    // 2. Prepare Messenger Message
-    let message = `📦 *New Order for SJM Moto*\nCustomer: ${name}\n\n`;
-    cart.forEach(item => {
-      message += `• ${item.name} (x${item.qty}) - ₱${(item.price * item.qty).toFixed(2)}\n`;
-    });
-    message += `\n*Total: ₱${total.toFixed(2)}*`;
-
-    // 3. Copy to Clipboard & Redirect
     await navigator.clipboard.writeText(message);
-    alert("✅ Order recorded! Redirecting to Messenger...");
-    window.open(`https://m.me/stephenjay.balansag.3`, "_blank");
-
-    // Clear Cart
-    cart = [];
-    UI.nameInput.value = "";
-    saveAndRefresh();
-
   } catch (err) {
-    console.error("Error:", err);
-    alert("Checkout error. Please try again.");
-  } finally {
-    UI.checkoutBtn.innerText = "Checkout via Messenger";
-    UI.checkoutBtn.disabled = false;
+    console.warn("Clipboard failed, proceeding anyway.");
   }
+
+  // 3. BACKGROUND FETCH (Don't "await" this so redirect happens immediately)
+  fetch('https://script.google.com/macros/s/AKfycbwLhKj_ApouehvAVNQL9CvhrxjrHPIj8_eyOQEC84b8U01px4mh2oyDUC5TEsTQtbmO/exec', {
+    method: 'POST',
+    mode: 'no-cors', 
+    body: JSON.stringify(orderData)
+  }).catch(err => console.error("Sheet save failed in background", err));
+
+  // 4. ALERT AND REDIRECT (Mobile browsers like alerts to 'unlock' the redirect)
+  alert("✅ Order recorded! Opening Messenger...\n\nPlease paste the details in our chat.");
+  
+  // Use location.href instead of window.open to bypass pop-up blockers
+  window.location.href = `https://m.me/stephenjay.balansag.3`;
+
+  // 5. CLEAR LOCAL STATE
+  cart = [];
+  UI.nameInput.value = "";
+  saveAndRefresh();
 }
 
 // --- Initialization ---
