@@ -145,3 +145,28 @@ body {
   color: white;
   padding: 15px 25px;
 }
+
+.customer-info {
+  margin: 20px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.customer-info label {
+  font-weight: bold;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+}
+
+.customer-info input {
+  padding: 12px;
+  border: 2px solid var(--black);
+  border-radius: 4px;
+  font-size: 1rem;
+  outline: none;
+}
+
+.customer-info input:focus {
+  border-color: var(--primary-red);
+}

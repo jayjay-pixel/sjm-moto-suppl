@@ -3,7 +3,8 @@ const UI = {
   cartItems: document.getElementById('cart-items'),
   totalDisplay: document.getElementById('total'),
   checkoutBtn: document.getElementById('checkout-btn'),
-  toastContainer: document.getElementById('toast-container')
+  toastContainer: document.getElementById('toast-container'),
+  nameInput: document.getElementById('customer-name')
 };
 
 const products = [
@@ -31,7 +32,7 @@ function renderProducts() {
 
 function displayCart() {
   if (cart.length === 0) {
-    UI.cartItems.innerHTML = `<p style="text-align:center; color:#888;">Your cart is empty</p>`;
+    UI.cartItems.innerHTML = `<p style="text-align:center; color:#888; font-style:italic;">Your cart is empty</p>`;
     UI.totalDisplay.textContent = "0.00";
     return;
   }
@@ -95,23 +96,54 @@ function showToast(msg) {
 }
 
 async function checkout() {
+  const name = UI.nameInput.value.trim();
+
   if (cart.length === 0) return alert("Your cart is empty!");
+  if (!name) return alert("Please enter your name before checking out!");
 
-  let message = "📦 *New Order from SJM Moto*\n\n";
-  cart.forEach(item => {
-    message += `• ${item.name} (x${item.qty}) - ₱${(item.price * item.qty).toFixed(2)}\n`;
-  });
+  const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+  
+  // Prepare data for Google Sheets
+  const orderData = {
+    customer: name,
+    items: cart,
+    total: total.toFixed(2)
+  };
 
-  const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-  message += `\n*Total: ₱${total.toFixed(2)}*`;
+  UI.checkoutBtn.innerText = "Processing...";
+  UI.checkoutBtn.disabled = true;
 
   try {
+    // 1. Send to Google Sheets (Replace with your actual URL)
+    await fetch('https://script.google.com/macros/s/AKfycbwLhKj_ApouehvAVNQL9CvhrxjrHPIj8_eyOQEC84b8U01px4mh2oyDUC5TEsTQtbmO/exec', {
+      method: 'POST',
+      mode: 'no-cors', 
+      body: JSON.stringify(orderData)
+    });
+
+    // 2. Prepare Messenger Message
+    let message = `📦 *New Order for SJM Moto*\nCustomer: ${name}\n\n`;
+    cart.forEach(item => {
+      message += `• ${item.name} (x${item.qty}) - ₱${(item.price * item.qty).toFixed(2)}\n`;
+    });
+    message += `\n*Total: ₱${total.toFixed(2)}*`;
+
+    // 3. Copy to Clipboard & Redirect
     await navigator.clipboard.writeText(message);
-    alert("✅ Order details copied to clipboard!");
+    alert("✅ Order recorded! Redirecting to Messenger...");
     window.open(`https://m.me/stephenjay.balansag.3`, "_blank");
+
+    // Clear Cart
+    cart = [];
+    UI.nameInput.value = "";
+    saveAndRefresh();
+
   } catch (err) {
-    console.error("Clipboard fail", err);
-    window.open(`https://m.me/stephenjay.balansag.3`, "_blank");
+    console.error("Error:", err);
+    alert("Checkout error. Please try again.");
+  } finally {
+    UI.checkoutBtn.innerText = "Checkout via Messenger";
+    UI.checkoutBtn.disabled = false;
   }
 }
 
@@ -120,8 +152,6 @@ async function checkout() {
 document.addEventListener('DOMContentLoaded', () => {
   renderProducts();
   displayCart();
-  
-  // Listen for clicks on the whole body but filter for specific buttons
   document.body.addEventListener('click', handleCartActions);
   UI.checkoutBtn.addEventListener('click', checkout);
 });
