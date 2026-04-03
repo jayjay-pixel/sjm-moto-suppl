@@ -7,10 +7,10 @@ const products = [
   { name: "Shell Advance City Scooter 1L", price: 389, img: "cityscooter.webp" }
 ];
 
-// Cart initialization
+// Initialize cart from localStorage
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-// Render products
+// Render products dynamically
 function renderProducts() {
   const container = document.querySelector(".products");
   container.innerHTML = "";
@@ -27,7 +27,7 @@ function renderProducts() {
   });
 }
 
-// Add to cart
+// Add item to cart
 function addToCart(index) {
   const product = products[index];
   const item = cart.find(p => p.name === product.name);
@@ -38,7 +38,7 @@ function addToCart(index) {
   displayCart();
 }
 
-// Save cart
+// Save cart to localStorage
 function saveCart() {
   localStorage.setItem("cart", JSON.stringify(cart));
 }
@@ -83,40 +83,11 @@ function changeQty(index, delta) {
   displayCart();
 }
 
-// Remove item
+// Remove item from cart
 function removeItem(index) {
   cart.splice(index, 1);
   saveCart();
   displayCart();
-}
-
-// Checkout via Messenger
-function checkout() {
-  if (cart.length === 0) {
-    alert("Your cart is empty!");
-    return;
-  }
-
-  let message = "Hello! I want to order:\n\n";
-  cart.forEach(item => {
-    message += `${item.name} x${item.qty} = ₱${(item.price * item.qty).toFixed(2)}\n`;
-  });
-
-  const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-  message += `\nTotal: ₱${total.toFixed(2)}`;
-
-  navigator.clipboard.writeText(message).then(() => {
-    alert(
-      `✅ Order copied!\n\n📌 Next Steps:\n1. Open Messenger\n2. Tap the message box\n3. Hold then press PASTE\n4. Send your order\n\nThank you!`
-    );
-
-    const username = "stephenjay.balansag.3";
-    const messengerAppURL = `fb-messenger://user-thread/${username}`;
-    const messengerWebURL = `https://m.me/${username}`;
-
-    window.location.href = messengerAppURL;
-    setTimeout(() => window.open(messengerWebURL, "_blank"), 700);
-  });
 }
 
 // Toast notification
@@ -137,7 +108,44 @@ function showToast(msg) {
   setTimeout(() => document.body.removeChild(toast), 2000);
 }
 
-// Initialize
+// Checkout via Messenger (mobile & desktop friendly)
+function checkout() {
+  if (cart.length === 0) {
+    alert("Your cart is empty!");
+    return;
+  }
+
+  // Build order message
+  let message = "Hello! I want to order:\n\n";
+  cart.forEach(item => {
+    message += `${item.name} x${item.qty} = ₱${(item.price * item.qty).toFixed(2)}\n`;
+  });
+
+  const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  message += `\nTotal: ₱${total.toFixed(2)}`;
+
+  // Copy order to clipboard
+  navigator.clipboard.writeText(message).then(() => {
+    alert(
+      `✅ Order copied!\n\n📌 Next Steps:\n1. Open Messenger\n2. Paste your order\n3. Send it\n\nThank you!`
+    );
+
+    // Messenger web link
+    const username = "stephenjay.balansag.3";
+    const messengerWebURL = `https://m.me/${username}`;
+
+    // Open in new tab (OS/browser will handle app redirect)
+    window.open(messengerWebURL, "_blank");
+
+  }).catch(err => {
+    alert("❌ Failed to copy order. Please copy manually.");
+    console.error(err);
+  });
+}
+
+// Initialize page
 renderProducts();
 displayCart();
+
+// Attach checkout event
 document.getElementById("checkout-btn").addEventListener("click", checkout);
