@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SJM Moto Supply | Shop & Services</title>
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=7">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -27,12 +27,13 @@
     </section>
 
     <section id="cart-section" class="cart-card">
-      <div class="cart-header">
+      <div class="cart-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2>Your Selection</h2>
         <span id="cart-count">0 items</span>
       </div>
       
-      <div id="cart-items" class="cart-list"></div>
+      <div id="cart-items" class="cart-list">
+        </div>
 
       <div class="booking-details">
         <div class="input-group">
@@ -40,24 +41,24 @@
           <input type="text" id="customer-name" placeholder="Enter your name" required>
         </div>
 
-        <div id="service-options" class="service-panel" style="display:none;">
-          <label>Service Preference</label>
+        <div id="service-options" class="service-panel" style="display:none; margin-top: 20px;">
+          <label>Order Preference</label>
           <div class="mode-selector">
-            <button type="button" id="btn-shop" class="mode-btn active">Walk In</button>
-            <button type="button" id="btn-home" class="mode-btn">Home Service</button>
+            <button type="button" id="btn-shop" class="mode-btn active">Walk-in / Pickup</button>
+            <button type="button" id="btn-home" class="mode-btn">Home Delivery</button>
           </div>
           
           <div id="distance-box" style="display:none; margin-top: 15px;">
-            <label>Distance from Katipunan (km)</label>
-            <input type="number" id="distance" value="0" min="0">
-            <p class="fee-note">+ ₱3.00 per km delivery fee</p>
+            <label>Input Your Location</label>
+            <input type="text" id="distance" placeholder="Brgy, Street, or Landmark">
+            <p class="fee-note">Service/Delivery fee may vary based on location.</p>
           </div>
         </div>
       </div>
 
       <div class="cart-summary">
         <div class="total-row">
-          <span>Total:</span>
+          <span>Total Amount:</span>
           <span class="total-price">₱<span id="total">0.00</span></span>
         </div>
         <button id="checkout-btn" class="btn-checkout">Confirm via Messenger</button>
@@ -66,6 +67,7 @@
   </main>
 
   <div id="toast-container"></div>
-  <script src="script.js?v=3"></script>
+
+  <script src="script.js?v=7"></script>
 </body>
 </html>

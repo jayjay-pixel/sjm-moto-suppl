@@ -22,15 +22,23 @@ const UI = {
   distBox: document.getElementById('distance-box')
 };
 
+// 1. RENDER FUNCTION
 function render(filter = "oil") {
   const items = products.filter(p => p.type === filter);
   document.getElementById('section-title').innerText = filter === "oil" ? "Motorcycle Oil" : "Our Services";
+  
   UI.grid.innerHTML = items.map(p => `
     <div class="product-card">
-      <img src="${p.img}" onerror="this.src='https://via.placeholder.com/150?text=SJM'">
-      <h3>${p.name}</h3>
-      <p class="price">₱${p.price}</p>
-      <button class="btn-primary" onclick="addToCart(${p.id})">Add to Cart</button>
+      <div class="img-container">
+        <img src="${p.img}" onerror="this.src='https://via.placeholder.com/150?text=SJM'">
+      </div>
+      <div class="product-info">
+        <h3>${p.name}</h3>
+        <p class="price">₱${p.price}</p>
+        <button class="btn-primary" onclick="addToCart(${p.id})">
+          ${p.type === 'service' ? 'Book Service' : 'Add to Cart'}
+        </button>
+      </div>
     </div>
   `).join('');
 }
@@ -44,19 +52,16 @@ window.addToCart = (id) => {
   showToast(`Added ${item.name}`);
 };
 
-// --- NEW: Change Quantity Logic ---
 window.changeQty = (idx, delta) => {
   cart[idx].qty += delta;
-  if (cart[idx].qty <= 0) {
-    cart.splice(idx, 1);
-  }
+  if (cart[idx].qty <= 0) cart.splice(idx, 1);
   update();
 };
 
+// 2. UPDATE FUNCTION
 function update() {
   localStorage.setItem("cart", JSON.stringify(cart));
-  const hasService = cart.some(i => i.type === 'service');
-  UI.servicePanel.style.display = hasService ? "block" : "none";
+  UI.servicePanel.style.display = cart.length > 0 ? "block" : "none";
 
   if (cart.length === 0) {
     UI.cartList.innerHTML = `<p style="text-align:center; color:#999; padding:10px;">Cart is empty</p>`;
@@ -70,15 +75,15 @@ function update() {
     const price = (serviceMode === "home" && item.type === "service") ? item.homePrice : item.price;
     subtotal += (price * item.qty);
     return `
-      <div class="cart-item" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+      <div class="cart-item">
         <div style="flex: 2;">
-          <strong style="font-size: 0.9rem;">${item.name}</strong><br>
+          <strong>${item.name}</strong><br>
           <small>₱${price} each</small>
         </div>
         <div style="display: flex; align-items: center; gap: 10px; flex: 1; justify-content: center;">
-          <button onclick="changeQty(${idx}, -1)" style="width:25px; height:25px; border:1px solid #ddd; background:#eee; cursor:pointer;">-</button>
+          <button class="qty-btn" onclick="changeQty(${idx}, -1)">-</button>
           <span>${item.qty}</span>
-          <button onclick="changeQty(${idx}, 1)" style="width:25px; height:25px; border:1px solid #ddd; background:#eee; cursor:pointer;">+</button>
+          <button class="qty-btn" onclick="changeQty(${idx}, 1)">+</button>
         </div>
         <div style="flex: 1; text-align: right; font-weight: bold;">
           ₱${(price * item.qty).toLocaleString()}
@@ -86,22 +91,23 @@ function update() {
       </div>`;
   }).join('');
 
-  const distFee = serviceMode === "home" ? (parseFloat(UI.distInput.value) || 0) * 3 : 0;
-  UI.total.innerText = (subtotal + distFee).toLocaleString(undefined, {minimumFractionDigits: 2});
+  UI.total.innerText = subtotal.toLocaleString(undefined, {minimumFractionDigits: 2});
   document.getElementById('cart-count').innerText = `${cart.length} item(s)`;
 }
 
-// Tab Switching
+// 3. NAVIGATION
 document.getElementById('show-oils').onclick = (e) => { render('oil'); switchTab(e.target); };
 document.getElementById('show-services').onclick = (e) => { render('service'); switchTab(e.target); };
+
 function switchTab(btn) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
 }
 
-// Mode Switching
+// 4. MODE SWITCHING
 document.getElementById('btn-shop').onclick = () => { serviceMode = "shop"; toggleMode('btn-shop'); };
 document.getElementById('btn-home').onclick = () => { serviceMode = "home"; toggleMode('btn-home'); };
+
 function toggleMode(id) {
   document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -111,68 +117,93 @@ function toggleMode(id) {
 
 UI.distInput.oninput = update;
 
+// 5. CHECKOUT & MESSENGER
 UI.checkout.onclick = async () => {
   const name = UI.name.value.trim();
+  const location = UI.distInput.value.trim();
+  
   if (!name || cart.length === 0) return alert("Please enter your name!");
+  if (serviceMode === "home" && !location) return alert("Please enter your location/address!");
 
+  // Define orderMode to prevent ReferenceError
+  const orderMode = serviceMode === "home" ? "Home Delivery / Service" : "Walk-in / Pickup";
   const oilItems = cart.filter(item => item.type === 'oil');
   const serviceItems = cart.filter(item => item.type === 'service');
   const today = new Date().toLocaleDateString();
 
-  // 1. Send to Sales Tracking (Oil)
+  // 1. Send to SJM Sales Tracker (Oil Only)
   if (oilItems.length > 0) {
     const salesData = {
       date: today,
       customer: name,
       description: oilItems.map(i => `• ${i.name} (x${i.qty})`).join("\n"),
       totalQty: oilItems.reduce((sum, i) => sum + i.qty, 0),
-      totalCost: oilItems.reduce((sum, i) => sum + (i.price * i.qty), 0).toFixed(2)
+      totalCost: oilItems.reduce((sum, i) => sum + (i.price * i.qty), 0).toFixed(2),
+      mode: orderMode,
+      location: serviceMode === "home" ? location : "N/A" 
     };
-    fetch('https://script.google.com/macros/s/AKfycbzmBkMTPCv67r4Nek-ge6Rz0CyxFiaXTfmftrBq7NzDnpFkGYCuqYQgkAx9-vx71zELNA/exec', { method: 'POST', mode: 'no-cors', body: JSON.stringify(salesData) });
-  }
 
-  // 2. Send to SJM Services (Labor)
-  // --- Send Services to SJM Services ---
+    fetch('https://script.google.com/macros/s/AKfycbzmBkMTPCv67r4Nek-ge6Rz0CyxFiaXTfmftrBq7NzDnpFkGYCuqYQgkAx9-vx71zELNA/exec', { 
+      method: 'POST', 
+      mode: 'no-cors', 
+      body: JSON.stringify(salesData) 
+    });
+  }
+  
+  // 2. Send to SJM Services (Services Only)
   if (serviceItems.length > 0) {
-    const dist = parseFloat(UI.distInput.value) || 0;
-    const distFee = serviceMode === "home" ? dist * 3 : 0;
-    
-    // Calculate the overall total for services
     const serviceSubtotal = serviceItems.reduce((sum, i) => {
-      const p = serviceMode === "home" ? i.homePrice : i.price;
+      const p = (serviceMode === "home") ? i.homePrice : i.price;
       return sum + (p * i.qty);
     }, 0);
-
-    const overallServiceTotal = (serviceSubtotal + distFee).toFixed(2);
 
     const serviceData = {
       date: today,
       customer: name,
       serviceType: serviceItems.map(i => `• ${i.name}`).join("\n"),
-      serviceMode: serviceMode === "home" ? "Home Service" : "Walk-in",
-      distance: serviceMode === "home" ? dist : 0, // Sends 0 if Walk-in
-      totalCost: overallServiceTotal // Overall Total (Service + Fee)
+      serviceMode: orderMode,
+      distance: serviceMode === "home" ? location : "N/A",
+      totalCost: serviceSubtotal.toFixed(2) 
     };
 
     fetch('https://script.google.com/macros/s/AKfycbz6nRX4KqZ-QM3O4-ojscDzQEuTWsrDBwzrEYLV7Vpy0y5FK6ZXIENLI2mr-FKzub6ApA/exec', { 
       method: 'POST', 
       mode: 'no-cors', 
       body: JSON.stringify(serviceData) 
-    }).catch(e => console.log("Service Sheet error"));
+    });
   }
 
-  // 3. Messenger Redirect
-  let msg = `📦 *ORDER: SJM MOTO*\nName: ${name}\n\n` + 
-            cart.map(i => `• ${i.name} (x${i.qty})`).join("\n") + 
-            `\n\n*TOTAL: ₱${UI.total.innerText}*`;
-
-  await navigator.clipboard.writeText(msg);
-  alert("✅ Recorded! Opening Messenger... \n\n Paste the order in messenger.");
+  // 3. Messenger Message
+  let msg = `📦 NEW ORDER: SJM MOTO\n`;
+  msg += `--------------------------\n`;
+  msg += `👤 Customer: ${name}\n`;
+  msg += `📍 Type: ${orderMode.toUpperCase()}\n`;
   
-  cart = [];
-  localStorage.removeItem("cart");
-  update();
-  window.location.href = "https://m.me/stephenjay.balansag.3";
+  if (serviceMode === "home") {
+    msg += `🗺️ Location: ${location}\n`;
+  }
+  
+  msg += `\n🛒 DETAILS:\n`;
+  cart.forEach(i => {
+    const p = (serviceMode === "home" && i.type === "service") ? i.homePrice : i.price;
+    msg += `• ${i.name} (x${i.qty}) - ₱${(p * i.qty).toFixed(2)}\n`;
+  });
+
+  msg += `\n💰 ESTIMATED TOTAL: ₱${UI.total.innerText}`;
+  msg += `\n--------------------------\n`;
+  msg += `Note: Final service fee depends on distance.`;
+
+  try {
+    await navigator.clipboard.writeText(msg);
+    alert("✅ Order Recorded!\n\nDetails copied. Opening Messenger... Just PASTE in our chat.");
+    
+    cart = [];
+    localStorage.removeItem("cart");
+    update();
+    window.location.href = "https://m.me/stephenjay.balansag.3";
+  } catch (err) {
+    alert("Error copying message.");
+  }
 };
 
 function showToast(m) {
@@ -183,6 +214,6 @@ function showToast(m) {
   setTimeout(() => t.remove(), 2000);
 }
 
-// Initial Load
+// INITIALIZE
 render('oil');
 update();
