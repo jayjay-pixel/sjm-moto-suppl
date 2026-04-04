@@ -162,27 +162,30 @@ async function checkout() {
   displayCart();
 }
 // Initialize
+// --- Updated Initialization for Mobile ---
+
 document.addEventListener('DOMContentLoaded', () => {
   renderItems('oil');
   displayCart();
-  document.body.addEventListener('click', (e) => {
-    if (e.target.classList.contains('add-to-cart')) {
-      const id = parseInt(e.target.dataset.id);
-      const product = products.find(p => p.id === id);
-      const cartItem = cart.find(item => item.id === id);
-      if (cartItem) cartItem.qty++;
-      else cart.push({ ...product, qty: 1 });
-      saveAndRefresh(`Added ${product.name}`);
-    }
-    if (e.target.classList.contains('qty-btn')) {
-      const index = e.target.dataset.index;
-      const delta = parseInt(e.target.dataset.delta);
-      cart[index].qty += delta;
-      if (cart[index].qty <= 0) cart.splice(index, 1);
-      saveAndRefresh();
-    }
-  });
+
+  // 1. Navigation Button Listeners (Direct binding is better for mobile)
+  UI.btnOils.addEventListener('click', () => renderItems('oil'));
+  UI.btnServices.addEventListener('click', () => renderItems('service'));
+
+  // 2. Checkout Button
   UI.checkoutBtn.addEventListener('click', checkout);
+
+  // 3. Delegation for dynamic items (Add to Cart / Qty Buttons)
+  // We attach to the specific grids/containers instead of the whole 'body'
+  UI.productGrid.addEventListener('click', handleCartActions);
+  UI.cartItems.addEventListener('click', handleCartActions);
+
+  // 4. Service Mode & Distance
+  UI.serviceMode.addEventListener('change', (e) => {
+    UI.distanceWrap.style.display = e.target.value === "home" ? "block" : "none";
+    displayCart();
+  });
+  UI.distanceInput.addEventListener('input', displayCart);
 });
 
 function saveAndRefresh(msg) {

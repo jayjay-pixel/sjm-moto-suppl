@@ -209,3 +209,8 @@ body {
   right: 20px;
   z-index: 1000;
 }
+
+.nav-btn, .qty-btn, .btn-primary, .add-to-cart {
+  cursor: pointer;
+  touch-action: manipulation; /* Improves tap response on mobile */
+}
