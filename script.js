@@ -1,203 +1,155 @@
-const UI = {
-  productGrid: document.getElementById('product-grid'),
-  cartItems: document.getElementById('cart-items'),
-  totalDisplay: document.getElementById('total'),
-  checkoutBtn: document.getElementById('checkout-btn'),
-  toastContainer: document.getElementById('toast-container'),
-  nameInput: document.getElementById('customer-name'),
-  sectionTitle: document.getElementById('section-title'),
-  btnOils: document.getElementById('show-oils'),
-  btnServices: document.getElementById('show-services'),
-  serviceOptions: document.getElementById('service-options'),
-  serviceMode: document.getElementById('service-mode'),
-  distanceWrap: document.getElementById('distance-input-wrap'),
-  distanceInput: document.getElementById('distance')
-};
-
 const products = [
-  { id: 1, name: "Shell Advance 4T Long Ride 10W-40 1L", price: 429, img: "longride.webp", type: "oil" },
-  { id: 2, name: "Shell Advance AX7 10W-40 1L", price: 379, img: "ax7_1l.webp", type: "oil" },
-  { id: 3, name: "Shell Advance AX7 10W-40 0.8L", price: 319, img: "ax7_0.8l.webp", type: "oil" },
-  { id: 4, name: "Shell Advance AX7 Scooter 0.8L + Gear Oil", price: 349, img: "withgearoil.webp", type: "oil" },
+  { id: 1, name: "Shell Advance 4T Long Ride 1L", price: 429, img: "longride.webp", type: "oil" },
+  { id: 2, name: "Shell Advance AX7 1L", price: 379, img: "ax7_1l.webp", type: "oil" },
+  { id: 3, name: "Shell Advance AX7 0.8L", price: 319, img: "ax7_0.8l.webp", type: "oil" },
+  { id: 4, name: "Shell AX7 Scooter 0.8L + Gear Oil", price: 349, img: "withgearoil.webp", type: "oil" },
   { id: 5, name: "Shell Advance City Scooter 1L", price: 389, img: "cityscooter.webp", type: "oil" },
-  // Services
   { id: 101, name: "CVT Cleaning", price: 200, homePrice: 250, img: "cvt.png", type: "service" },
   { id: 102, name: "Change Oil", price: 30, homePrice: 50, img: "change_oil.png", type: "service" }
 ];
 
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
-let currentView = "oil";
+let serviceMode = "shop";
 
-function renderItems(filter) {
-  currentView = filter;
-  const filtered = products.filter(p => p.type === filter);
-  
-  UI.productGrid.innerHTML = filtered.map(p => `
+const UI = {
+  grid: document.getElementById('product-grid'),
+  cartList: document.getElementById('cart-items'),
+  total: document.getElementById('total'),
+  name: document.getElementById('customer-name'),
+  distInput: document.getElementById('distance'),
+  checkout: document.getElementById('checkout-btn'),
+  servicePanel: document.getElementById('service-options'),
+  distBox: document.getElementById('distance-box')
+};
+
+function render(filter = "oil") {
+  const items = products.filter(p => p.type === filter);
+  document.getElementById('section-title').innerText = filter === "oil" ? "Motorcycle Oil" : "Our Services";
+  UI.grid.innerHTML = items.map(p => `
     <div class="product-card">
-      <img src="${p.img}" alt="${p.name}" onerror="this.src='https://via.placeholder.com/150?text=SJM+Moto'">
+      <img src="${p.img}" onerror="this.src='https://via.placeholder.com/150?text=SJM'">
       <h3>${p.name}</h3>
-      <p class="price">₱${p.price.toLocaleString()}${p.type === 'service' ? ' (Base)' : ''}</p>
-      <button class="btn-primary add-to-cart" data-id="${p.id}">Add to Cart</button>
+      <p class="price">₱${p.price}</p>
+      <button class="btn-primary" onclick="addToCart(${p.id})">Add to Cart</button>
     </div>
   `).join('');
-
-  // Update UI State
-  UI.sectionTitle.textContent = filter === "oil" ? "Motorcycle Oil" : "Our Services";
-  UI.btnOils.classList.toggle('active', filter === 'oil');
-  UI.btnServices.classList.toggle('active', filter === 'service');
 }
 
-function displayCart() {
-  const hasService = cart.some(item => item.type === 'service');
-  UI.serviceOptions.style.display = hasService ? "block" : "none";
+window.addToCart = (id) => {
+  const item = products.find(p => p.id === id);
+  const exists = cart.find(c => c.id === id);
+  if (exists) exists.qty++;
+  else cart.push({ ...item, qty: 1 });
+  update();
+  showToast(`Added ${item.name}`);
+};
+
+// --- NEW: Change Quantity Logic ---
+window.changeQty = (idx, delta) => {
+  cart[idx].qty += delta;
+  if (cart[idx].qty <= 0) {
+    cart.splice(idx, 1);
+  }
+  update();
+};
+
+function update() {
+  localStorage.setItem("cart", JSON.stringify(cart));
+  const hasService = cart.some(i => i.type === 'service');
+  UI.servicePanel.style.display = hasService ? "block" : "none";
 
   if (cart.length === 0) {
-    UI.cartItems.innerHTML = `<p style="text-align:center; color:#888;">Empty</p>`;
-    UI.totalDisplay.textContent = "0.00";
+    UI.cartList.innerHTML = `<p style="text-align:center; color:#999; padding:10px;">Cart is empty</p>`;
+    UI.total.innerText = "0.00";
+    document.getElementById('cart-count').innerText = "0 items";
     return;
   }
 
   let subtotal = 0;
-  const isHomeService = UI.serviceMode.value === "home";
-  const distance = parseFloat(UI.distanceInput.value) || 0;
-
-  UI.cartItems.innerHTML = cart.map((item, index) => {
-    // Logic: If Home Service, use the service's homePrice, else use standard price
-    let itemPrice = (isHomeService && item.type === 'service') ? item.homePrice : item.price;
-    let lineTotal = itemPrice * item.qty;
-    subtotal += lineTotal;
-
+  UI.cartList.innerHTML = cart.map((item, idx) => {
+    const price = (serviceMode === "home" && item.type === "service") ? item.homePrice : item.price;
+    subtotal += (price * item.qty);
     return `
-      <div class="cart-item">
-        <div style="flex:2">
-          <strong>${item.name}</strong><br>
-          <small>₱${itemPrice} ${item.type === 'service' && isHomeService ? '(Home Rate)' : ''}</small>
+      <div class="cart-item" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <div style="flex: 2;">
+          <strong style="font-size: 0.9rem;">${item.name}</strong><br>
+          <small>₱${price} each</small>
         </div>
-        <div class="cart-controls">
-          <button class="qty-btn" data-index="${index}" data-delta="-1">-</button>
+        <div style="display: flex; align-items: center; gap: 10px; flex: 1; justify-content: center;">
+          <button onclick="changeQty(${idx}, -1)" style="width:25px; height:25px; border:1px solid #ddd; background:#eee; cursor:pointer;">-</button>
           <span>${item.qty}</span>
-          <button class="qty-btn" data-index="${index}" data-delta="1">+</button>
+          <button onclick="changeQty(${idx}, 1)" style="width:25px; height:25px; border:1px solid #ddd; background:#eee; cursor:pointer;">+</button>
         </div>
-        <div style="flex:1; text-align:right">₱${lineTotal.toFixed(2)}</div>
-      </div>
-    `;
+        <div style="flex: 1; text-align: right; font-weight: bold;">
+          ₱${(price * item.qty).toLocaleString()}
+        </div>
+      </div>`;
   }).join('');
 
-  // Add Distance Fee if Home Service
-  let distanceFee = isHomeService ? (distance * 3) : 0;
-  let finalTotal = subtotal + distanceFee;
-
-  if(distanceFee > 0) {
-    UI.cartItems.innerHTML += `
-      <div class="cart-item" style="border-top: 1px dashed red">
-        <div style="flex:2"><strong>Distance Fee</strong><br><small>₱3.00 x ${distance}km</small></div>
-        <div style="flex:1; text-align:right">₱${distanceFee.toFixed(2)}</div>
-      </div>`;
-  }
-
-  UI.totalDisplay.textContent = finalTotal.toLocaleString(undefined, { minimumFractionDigits: 2 });
+  const distFee = serviceMode === "home" ? (parseFloat(UI.distInput.value) || 0) * 3 : 0;
+  UI.total.innerText = (subtotal + distFee).toLocaleString(undefined, {minimumFractionDigits: 2});
+  document.getElementById('cart-count').innerText = `${cart.length} item(s)`;
 }
 
-// Event handlers
-UI.btnOils.addEventListener('click', () => renderItems('oil'));
-UI.btnServices.addEventListener('click', () => renderItems('service'));
+// Tab Switching
+document.getElementById('show-oils').onclick = (e) => { render('oil'); switchTab(e.target); };
+document.getElementById('show-services').onclick = (e) => { render('service'); switchTab(e.target); };
+function switchTab(btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
 
-UI.serviceMode.addEventListener('change', (e) => {
-  UI.distanceWrap.style.display = e.target.value === "home" ? "block" : "none";
-  displayCart();
-});
+// Mode Switching
+document.getElementById('btn-shop').onclick = () => { serviceMode = "shop"; toggleMode('btn-shop'); };
+document.getElementById('btn-home').onclick = () => { serviceMode = "home"; toggleMode('btn-home'); };
+function toggleMode(id) {
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  UI.distBox.style.display = serviceMode === "home" ? "block" : "none";
+  update();
+}
 
-UI.distanceInput.addEventListener('input', displayCart);
+UI.distInput.oninput = update;
 
-// Updated Checkout logic to include service details
-async function checkout() {
-  const name = UI.nameInput.value.trim();
-  if (cart.length === 0) return alert("Your cart is empty!");
-  if (!name) return alert("Please enter your name!");
+UI.checkout.onclick = async () => {
+  const name = UI.name.value.trim();
+  if (!name || cart.length === 0) return alert("Please enter your name and add items!");
 
-  const isHome = UI.serviceMode.value === "home";
-  const dist = UI.distanceInput.value;
-  const total = UI.totalDisplay.textContent;
-
-  // 1. Prepare Message
-  let message = `📦 *New Order/Booking*\nCustomer: ${name}\n`;
-  message += `Type: ${isHome ? '🏠 Home Service (' + dist + 'km)' : '🏪 Shop Visit'}\n\n`;
-  cart.forEach(item => {
-    let p = (isHome && item.type === 'service') ? item.homePrice : item.price;
-    message += `• ${item.name} (x${item.qty}) - ₱${(p * item.qty).toFixed(2)}\n`;
+  let msg = `📦 *ORDER: SJM MOTO*\nName: ${name}\nMode: ${serviceMode.toUpperCase()}\n\n`;
+  cart.forEach(i => {
+    const p = (serviceMode === "home" && i.type === "service") ? i.homePrice : i.price;
+    msg += `• ${i.name} (x${i.qty}) - ₱${(p * i.qty).toFixed(2)}\n`;
   });
-  message += `\n*Total: ₱${total}*`;
+  if (serviceMode === "home") {
+    const d = UI.distInput.value || 0;
+    msg += `• Distance Fee (${d}km): ₱${(d * 3).toFixed(2)}\n`;
+  }
+  msg += `\n*TOTAL: ₱${UI.total.innerText}*`;
 
-  // 2. iOS-Friendly Clipboard Copy
   try {
-    await navigator.clipboard.writeText(message);
-  } catch (err) {
-    // Fallback for older iOS versions
-    const textArea = document.createElement("textarea");
-    textArea.value = message;
-    document.body.appendChild(textArea);
-    textArea.select();
-    document.execCommand('copy');
-    document.body.removeChild(textArea);
-  }
+    await navigator.clipboard.writeText(msg);
+    alert("✅ Order Details Copied!\n\nOpening Messenger... Just PASTE the message in our chat.");
+    
+    // Reset Cart AFTER successful copy and alert
+    cart = [];
+    localStorage.removeItem("cart");
+    UI.name.value = "";
+    update();
 
-  // 3. The Redirect (Crucial for iOS)
-  // On iOS, the alert "pauses" the script. 
-  // We place the redirect IMMEDIATELY after the alert so Safari sees it 
-  // as a direct result of the user clicking "OK".
-  alert("✅ Details Copied!\n\nClick OK to open Messenger and PASTE your order.");
-
-  // Using window.location.href is the most stable way to trigger the Messenger App on iOS
-  window.location.href = "fb-messenger://user-thread/stephenjay.balansag.3";
-
-  // Fallback: If the app doesn't open via the deep link, use the web link
-  setTimeout(() => {
     window.location.href = "https://m.me/stephenjay.balansag.3";
-  }, 500);
+  } catch (err) {
+    alert("Could not copy automatically. Please try again.");
+  }
+};
 
-  // 4. Clear Cart
-  cart = [];
-  localStorage.removeItem("cart");
-  UI.nameInput.value = "";
-  displayCart();
-}
-// Initialize
-// --- Updated Initialization for Mobile ---
-
-document.addEventListener('DOMContentLoaded', () => {
-  renderItems('oil');
-  displayCart();
-
-  // 1. Navigation Button Listeners (Direct binding is better for mobile)
-  UI.btnOils.addEventListener('click', () => renderItems('oil'));
-  UI.btnServices.addEventListener('click', () => renderItems('service'));
-
-  // 2. Checkout Button
-  UI.checkoutBtn.addEventListener('click', checkout);
-
-  // 3. Delegation for dynamic items (Add to Cart / Qty Buttons)
-  // We attach to the specific grids/containers instead of the whole 'body'
-  UI.productGrid.addEventListener('click', handleCartActions);
-  UI.cartItems.addEventListener('click', handleCartActions);
-
-  // 4. Service Mode & Distance
-  UI.serviceMode.addEventListener('change', (e) => {
-    UI.distanceWrap.style.display = e.target.value === "home" ? "block" : "none";
-    displayCart();
-  });
-  UI.distanceInput.addEventListener('input', displayCart);
-});
-
-function saveAndRefresh(msg) {
-  localStorage.setItem("cart", JSON.stringify(cart));
-  displayCart();
-  if (msg) showToast(msg);
+function showToast(m) {
+  const t = document.createElement("div"); 
+  t.className = "toast"; 
+  t.innerText = m;
+  document.body.appendChild(t); 
+  setTimeout(() => t.remove(), 2000);
 }
 
-function showToast(msg) {
-  const toast = document.createElement("div");
-  toast.className = "toast";
-  toast.textContent = msg;
-  UI.toastContainer.appendChild(toast);
-  setTimeout(() => toast.remove(), 2500);
-}
+// Initial Load
+render('oil');
+update();
