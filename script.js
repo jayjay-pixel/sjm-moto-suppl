@@ -113,33 +113,51 @@ UI.distInput.oninput = update;
 
 UI.checkout.onclick = async () => {
   const name = UI.name.value.trim();
-  if (!name || cart.length === 0) return alert("Please enter your name and add items!");
+  if (!name || cart.length === 0) return alert("Please enter your name!");
 
-  let msg = `📦 *ORDER: SJM MOTO*\nName: ${name}\nMode: ${serviceMode.toUpperCase()}\n\n`;
-  cart.forEach(i => {
-    const p = (serviceMode === "home" && i.type === "service") ? i.homePrice : i.price;
-    msg += `• ${i.name} (x${i.qty}) - ₱${(p * i.qty).toFixed(2)}\n`;
-  });
-  if (serviceMode === "home") {
-    const d = UI.distInput.value || 0;
-    msg += `• Distance Fee (${d}km): ₱${(d * 3).toFixed(2)}\n`;
+  const oilItems = cart.filter(item => item.type === 'oil');
+  const serviceItems = cart.filter(item => item.type === 'service');
+  const today = new Date().toLocaleDateString();
+
+  // 1. Send to Sales Tracking (Oil)
+  if (oilItems.length > 0) {
+    const salesData = {
+      date: today,
+      customer: name,
+      description: oilItems.map(i => `• ${i.name} (x${i.qty})`).join("\n"),
+      totalQty: oilItems.reduce((sum, i) => sum + i.qty, 0),
+      totalCost: oilItems.reduce((sum, i) => sum + (i.price * i.qty), 0).toFixed(2)
+    };
+    fetch('https://script.google.com/macros/s/AKfycbzmBkMTPCv67r4Nek-ge6Rz0CyxFiaXTfmftrBq7NzDnpFkGYCuqYQgkAx9-vx71zELNA/exec', { method: 'POST', mode: 'no-cors', body: JSON.stringify(salesData) });
   }
-  msg += `\n*TOTAL: ₱${UI.total.innerText}*`;
 
-  try {
-    await navigator.clipboard.writeText(msg);
-    alert("✅ Order Details Copied!\n\nOpening Messenger... Just PASTE the message in our chat.");
-    
-    // Reset Cart AFTER successful copy and alert
-    cart = [];
-    localStorage.removeItem("cart");
-    UI.name.value = "";
-    update();
-
-    window.location.href = "https://m.me/stephenjay.balansag.3";
-  } catch (err) {
-    alert("Could not copy automatically. Please try again.");
+  // 2. Send to SJM Services (Labor)
+  if (serviceItems.length > 0) {
+    const serviceData = {
+      date: today,
+      customer: name,
+      serviceType: serviceItems.map(i => `• ${i.name}`).join("\n"),
+      serviceMode: serviceMode === "home" ? "Home Service" : "Walk-in",
+      totalCost: serviceItems.reduce((sum, i) => {
+        const p = serviceMode === "home" ? i.homePrice : i.price;
+        return sum + (p * i.qty);
+      }, 0).toFixed(2)
+    };
+    fetch('https://script.google.com/macros/s/AKfycbz6nRX4KqZ-QM3O4-ojscDzQEuTWsrDBwzrEYLV7Vpy0y5FK6ZXIENLI2mr-FKzub6ApA/exec', { method: 'POST', mode: 'no-cors', body: JSON.stringify(serviceData) });
   }
+
+  // 3. Messenger Redirect
+  let msg = `📦 *ORDER: SJM MOTO*\nName: ${name}\n\n` + 
+            cart.map(i => `• ${i.name} (x${i.qty})`).join("\n") + 
+            `\n\n*TOTAL: ₱${UI.total.innerText}*`;
+
+  await navigator.clipboard.writeText(msg);
+  alert("✅ Recorded! Opening Messenger...");
+  
+  cart = [];
+  localStorage.removeItem("cart");
+  update();
+  window.location.href = "https://m.me/stephenjay.balansag.3";
 };
 
 function showToast(m) {
