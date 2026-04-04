@@ -3,33 +3,52 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SJM Moto Supply | Authorized Shell Distributor</title>
+  <title>SJM Moto Supply | Shop & Services</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="main-header">
     <h1>SJM Moto Supply</h1>
-    <p>Straight from the Authorized Shell Distributor</p>
+    <p>Authorized Shell Distributor & Expert Maintenance</p>
+    
+    <div class="nav-toggle">
+      <button id="show-oils" class="nav-btn active">Motorcycle Oil</button>
+      <button id="show-services" class="nav-btn">Our Services</button>
+    </div>
   </header>
 
   <main class="container">
-    <section class="products-section">
-      <h2>Products</h2>
+    <section class="items-section">
+      <h2 id="section-title">Motorcycle Oil</h2>
       <div id="product-grid" class="products-grid"></div>
     </section>
 
     <section id="cart-section" class="cart-card">
-      <h2>🛒 Your Cart</h2>
+      <h2>🛒 Your Booking/Cart</h2>
       <div id="cart-items" class="cart-list"></div>
       
       <div class="customer-info">
         <label for="customer-name">Customer's Name:</label>
-        <input type="text" id="customer-name" placeholder="Please enter your name" required>
+        <input type="text" id="customer-name" placeholder="Enter your name" required>
+        
+        <div id="service-options" style="display:none; margin-top: 15px;">
+           <label>Service Mode:</label>
+           <select id="service-mode">
+             <option value="shop">Walk-in (At Shop)</option>
+             <option value="home">Home Service</option>
+           </select>
+           
+           <div id="distance-input-wrap" style="display:none; margin-top: 10px;">
+             <label>Distance from Shop (km):</label>
+             <input type="number" id="distance" value="0" min="0">
+             <small style="color: var(--primary-red);">+ ₱3.00 per km</small>
+           </div>
+        </div>
       </div>
 
       <div class="cart-summary">
         <h3>Total: ₱<span id="total">0.00</span></h3>
-        <button id="checkout-btn" class="btn-primary">Checkout via Messenger</button>
+        <button id="checkout-btn" class="btn-primary">Confirm via Messenger</button>
       </div>
     </section>
   </main>
