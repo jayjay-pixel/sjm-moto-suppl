@@ -132,18 +132,33 @@ UI.checkout.onclick = async () => {
   }
 
   // 2. Send to SJM Services (Labor)
+  // --- Send Services to SJM Services ---
   if (serviceItems.length > 0) {
+    const dist = parseFloat(UI.distInput.value) || 0;
+    const distFee = serviceMode === "home" ? dist * 3 : 0;
+    
+    // Calculate the overall total for services
+    const serviceSubtotal = serviceItems.reduce((sum, i) => {
+      const p = serviceMode === "home" ? i.homePrice : i.price;
+      return sum + (p * i.qty);
+    }, 0);
+
+    const overallServiceTotal = (serviceSubtotal + distFee).toFixed(2);
+
     const serviceData = {
       date: today,
       customer: name,
       serviceType: serviceItems.map(i => `• ${i.name}`).join("\n"),
       serviceMode: serviceMode === "home" ? "Home Service" : "Walk-in",
-      totalCost: serviceItems.reduce((sum, i) => {
-        const p = serviceMode === "home" ? i.homePrice : i.price;
-        return sum + (p * i.qty);
-      }, 0).toFixed(2)
+      distance: serviceMode === "home" ? dist : 0, // Sends 0 if Walk-in
+      totalCost: overallServiceTotal // Overall Total (Service + Fee)
     };
-    fetch('https://script.google.com/macros/s/AKfycbz6nRX4KqZ-QM3O4-ojscDzQEuTWsrDBwzrEYLV7Vpy0y5FK6ZXIENLI2mr-FKzub6ApA/exec', { method: 'POST', mode: 'no-cors', body: JSON.stringify(serviceData) });
+
+    fetch('https://script.google.com/macros/s/AKfycbz6nRX4KqZ-QM3O4-ojscDzQEuTWsrDBwzrEYLV7Vpy0y5FK6ZXIENLI2mr-FKzub6ApA/exec', { 
+      method: 'POST', 
+      mode: 'no-cors', 
+      body: JSON.stringify(serviceData) 
+    }).catch(e => console.log("Service Sheet error"));
   }
 
   // 3. Messenger Redirect
@@ -152,7 +167,7 @@ UI.checkout.onclick = async () => {
             `\n\n*TOTAL: ₱${UI.total.innerText}*`;
 
   await navigator.clipboard.writeText(msg);
-  alert("✅ Recorded! Opening Messenger...");
+  alert("✅ Recorded! Opening Messenger... \n\n Paste the order in messenger.");
   
   cart = [];
   localStorage.removeItem("cart");
